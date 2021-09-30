@@ -22,7 +22,7 @@ public class ArkanoidLogic
 
         gameData.GameState = GameStateEnum.IN_GAME;
 
-        float startX = -Mathf.Floor(GameManager.MAX_WIDTH / 2.0f) * GameManager.XOFFSET;
+        float startX = -(Mathf.Floor(GameManager.MAX_WIDTH / 2.0f) - 0.5f) * GameManager.XOFFSET;
         float startY = GameManager.BLOCK_START_Y;
         for (int i = 0; i < GameManager.MAX_WIDTH * GameManager.MAX_HEIGHT; i++)
         {

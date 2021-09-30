@@ -29,10 +29,10 @@ public struct GameData
 
 public class GameManager : MonoBehaviour
 {
-    public static int MAX_WIDTH = 13;
+    public static int MAX_WIDTH = 8;
     public static int MAX_HEIGHT = 5;
-    public static float XOFFSET = 0.64f;
-    public static float YOFFSET = 0.32f;
+    public static float XOFFSET = 1.0f;
+    public static float YOFFSET = 0.5f;
 
     public static float BLOCK_START_Y = 2.75f;
     public static float BALL_START_Y = -1.75f;
@@ -40,8 +40,8 @@ public class GameManager : MonoBehaviour
 
     public static float BALL_VELOCITY = 7.5f;
 
-    public static float BOARD_LIMIT_X = 4.0f;
-    public static float BOARD_LIMIT_Y = 5.6f;
+    public static float BOARD_LIMIT_X = 3.8f;
+    public static float BOARD_LIMIT_Y = 5.65f;
     public static float FLOOR_LIMIT_Y = -5.0f;
 
     public static float BLOCK_SIZE_X = 0.48f;

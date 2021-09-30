@@ -30,7 +30,7 @@ public class ArkanoidVisual : MonoBehaviour
             {
                 int index = i + j * GameManager.MAX_WIDTH;
                 GameObject block = Instantiate(BlockPrefab, SpritesParent);
-                block.transform.localScale = Vector3.one * 0.5f;
+                block.transform.localScale = Vector3.one;
                 blocksSR[index] = block.GetComponentInChildren<SpriteRenderer>();
                 blocksA[index] = block.GetComponentInChildren<Animation>();
                 blocksT[index] = block.transform;
