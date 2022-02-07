@@ -45,7 +45,7 @@ public class ArkanoidLogic
     {
         gameData.BallPosition = new Vector2(0.0f, GameManager.BALL_START_Y);
         gameData.BallDirection = new Vector2(CustomRandFloat() - 0.5f, 0.5f);
-        gameData.BallDirection.Normalize();
+        //gameData.BallDirection.Normalize();
     }
 
     public static void Tick(float dt, ref GameData gameData)
@@ -57,47 +57,7 @@ public class ArkanoidLogic
                 if (gameData.BlockState[i] == BlockStateEnum.DYING)
                     gameData.BlockState[i] = BlockStateEnum.DEAD;
 
-            Vector2 ballPos = gameData.BallPosition;
-            ballPos.y += gameData.BallDirection.y * dt * GameManager.BALL_VELOCITY;
-            if (ballPos.y > GameManager.BOARD_LIMIT_Y)
-            {
-                gameData.BallDirection.y = -gameData.BallDirection.y;
-                ballPos.y = gameData.BallPosition.y;
-            }
-            else if (ballPos.y < gameData.PaddlePosition.y + GameManager.PADDLE_SIZE_Y && (ballPos.x > gameData.PaddlePosition.x - GameManager.PADDLE_SIZE_X && ballPos.x < gameData.PaddlePosition.x + GameManager.PADDLE_SIZE_X))
-            {
-                gameData.BallDirection.y = -gameData.BallDirection.y;
-                gameData.BallDirection.x = (ballPos.x - gameData.PaddlePosition.x) / GameManager.PADDLE_SIZE_X * 2.0f;
-                gameData.BallDirection.Normalize();
-                ballPos.y = gameData.BallPosition.y;
-            }
-            else if (ballPos.y < gameData.PaddlePosition.y)
-            {
-                gameData.GameState = GameStateEnum.BALL_LOST;
-            }
-            else if (ballPos.y < GameManager.FLOOR_LIMIT_Y)
-            {
-                gameData.GameState = GameStateEnum.RESTART;
-            }
-            else if (ApplyBallBlocksCollision(ref gameData))
-            {
-                gameData.BallDirection.y = -gameData.BallDirection.y;
-                ballPos.y = gameData.BallPosition.y;
-            }
-
-            ballPos.x += gameData.BallDirection.x * dt * GameManager.BALL_VELOCITY;
-            if (ballPos.x < -GameManager.BOARD_LIMIT_X || ballPos.x > GameManager.BOARD_LIMIT_X)
-            {
-                gameData.BallDirection.x = -gameData.BallDirection.x;
-                ballPos.x = gameData.BallPosition.x;
-            }
-            else if (ApplyBallBlocksCollision(ref gameData))
-            {
-                gameData.BallDirection.x = -gameData.BallDirection.x;
-                ballPos.x = gameData.BallPosition.x;
-            }
-
-            gameData.BallPosition = ballPos;
+            gameData.BallPosition = moveBall(dt, ref gameData);
         }
         if (gameData.GameState == GameStateEnum.BALL_LOST)
         {
@@ -116,12 +76,57 @@ public class ArkanoidLogic
         }
     }
 
-    public static bool ApplyBallBlocksCollision(ref GameData gameData)
+    static Vector2 moveBall(float dt, ref GameData gameData)
+    {
+        Vector2 currentBallPos = gameData.BallPosition;
+
+        Vector2 newBallPos = currentBallPos;
+        newBallPos.y = currentBallPos.y + gameData.BallDirection.y * dt * GameManager.BALL_VELOCITY;
+        if (newBallPos.y > GameManager.BOARD_LIMIT_Y)
+        {
+            gameData.BallDirection.y = -gameData.BallDirection.y;
+            newBallPos.y = currentBallPos.y;
+        }
+        else if (BallInPaddle(newBallPos, gameData.PaddlePosition))
+        {
+            gameData.BallDirection = GetPaddleCollisionDirection(gameData, newBallPos);
+            newBallPos.y = currentBallPos.y;
+        }
+        else if (newBallPos.y < gameData.PaddlePosition.y)
+        {
+            gameData.GameState = GameStateEnum.BALL_LOST;
+        }
+        else if (newBallPos.y < GameManager.FLOOR_LIMIT_Y)
+        {
+            gameData.GameState = GameStateEnum.RESTART;
+        }
+        else if (BallBlocksCollision(ref gameData, newBallPos))
+        {
+            gameData.BallDirection.y = -gameData.BallDirection.y;
+            newBallPos.y = currentBallPos.y;
+        }
+
+        newBallPos.x += gameData.BallDirection.x * dt * GameManager.BALL_VELOCITY;
+        if (newBallPos.x < -GameManager.BOARD_LIMIT_X || newBallPos.x > GameManager.BOARD_LIMIT_X)
+        {
+            gameData.BallDirection.x = -gameData.BallDirection.x;
+            newBallPos.x = currentBallPos.x;
+        }
+        else if (BallBlocksCollision(ref gameData, newBallPos))
+        {
+            gameData.BallDirection.x = -gameData.BallDirection.x;
+            newBallPos.x = currentBallPos.x;
+        }
+
+        return newBallPos;
+    }
+
+    public static bool BallBlocksCollision(ref GameData gameData, Vector2 newBallPos)
     {
         int numBlocks = gameData.BlockPositions.Length;
         bool returnValue = false;
         for(int i = 0; i < numBlocks; i++)
-            if (gameData.BlockState[i] != BlockStateEnum.DEAD && BallInBlock(gameData.BallPosition, gameData.BlockPositions[i]))
+            if (gameData.BlockState[i] != BlockStateEnum.DEAD && ballInBlock(newBallPos, gameData.BlockPositions[i]))
             {
                 gameData.Score += 100;
                 gameData.BlockState[i] = BlockStateEnum.DYING;
@@ -129,16 +134,45 @@ public class ArkanoidLogic
             }
         return returnValue;
     }
+    public static bool BallInPaddle(Vector2 ballPos, Vector2 paddlePosition)
+    {
+        return (ballPos.y < paddlePosition.y + GameManager.PADDLE_SIZE_Y && (ballPos.x > paddlePosition.x - GameManager.PADDLE_SIZE_X && ballPos.x < paddlePosition.x + GameManager.PADDLE_SIZE_X));
+    }
 
-    public static bool BallInBlock(Vector2 ballPos, Vector2 blockPos)
+    static bool ballInBlock(Vector2 ballPos, Vector2 blockPos)
     {
         return ((ballPos.x >= blockPos.x - GameManager.BLOCK_SIZE_X && ballPos.x <= blockPos.x + GameManager.BLOCK_SIZE_X) &&
             (ballPos.y >= blockPos.y - GameManager.BLOCK_SIZE_Y && ballPos.y <= blockPos.y + GameManager.BLOCK_SIZE_Y));
     }
-
+    
     public static void MovePaddle(ref GameData gameData, float x)
     {
         gameData.PaddlePosition.x = x;
+    }
+
+    public static bool BallWillHitPaddle(GameData gameData, out Vector2 ballPos)
+    {
+        ballPos = gameData.BallPosition;
+        float dt = 1.0f / 60.0f;
+        if(gameData.BallDirection.y < 0.0f)
+        {
+            while(ballPos.y > GameManager.FLOOR_LIMIT_Y)
+            {
+                ballPos += gameData.BallDirection * GameManager.BALL_VELOCITY * dt;
+                if (BallInPaddle(ballPos, gameData.PaddlePosition))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    public static Vector2 GetPaddleCollisionDirection(GameData gameData, Vector2 ballPos)
+    {
+        Vector2 newDirection;
+        newDirection.y = -gameData.BallDirection.y;
+        newDirection.x = (ballPos.x - gameData.PaddlePosition.x) / GameManager.PADDLE_SIZE_X * 2.0f;
+        newDirection.x = Mathf.Clamp(newDirection.x, -0.5f, 0.5f);
+        return newDirection;
     }
 
     public static bool CheckWinCondition(GameData gameData)
